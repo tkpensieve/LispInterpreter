@@ -1,4 +1,7 @@
 *.class
+**/[Bb]in/
+*.classpath
+*.project
 
 # Package Files #
 *.jar
