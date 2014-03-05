@@ -21,7 +21,6 @@ public class Runner {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
-
 		String line;
 		try {
 			System.out.println("Press q to quit.");
@@ -37,7 +36,7 @@ public class Runner {
 						 exp = eb.build(validTokens, true);
 						 //Call eval on the expression tree
 						 //Print the result
-						 System.out.print("Parsed: ");
+						 System.out.print("] ");
 						 exp.print();
 						 System.out.println("");
 						 System.out.println("Press q to quit.");

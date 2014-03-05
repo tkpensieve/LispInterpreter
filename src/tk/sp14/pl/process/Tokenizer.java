@@ -27,8 +27,8 @@ public class Tokenizer {
 				}
 				currentPosition++;
 			}
-			if(parsedPosition == 0)
-				validTokens.add(line);
+			if(parsedPosition != currentPosition)
+				validTokens.add(line.substring(parsedPosition, currentPosition));
 		}
 		return validTokens;
 	}

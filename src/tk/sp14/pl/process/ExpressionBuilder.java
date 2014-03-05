@@ -33,11 +33,16 @@ public class ExpressionBuilder {
 
 	public SExpression build(ArrayList<String> validTokens, boolean isBeginning) throws InvalidInputException{
 		if(isBeginning){
-			validTokens.addAll(unprocessedTokens);
+			if(unprocessedTokens.size() >0)
+				unprocessedTokens.add(" ");
+			validTokens.addAll(0, unprocessedTokens);
 			unprocessedTokens.clear();
 		}
+		System.out.println(validTokens);
 		String t = validTokens.get(0);
 		SExpression exp;
+		if(validTokens.size() == 1)
+			exp = createAtom(t);
 		if(primitiveMethods.contains(t)){
 			int argsCount = primitiveMethodsParameterCount.get(t);
 			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(t, argsCount);
@@ -53,8 +58,6 @@ public class ExpressionBuilder {
 		}
 		else if(t.equals("("))
 			exp =  parseWithinParams(validTokens, 1).get(0);
-		else if(validTokens.size() == 1)
-			exp = createAtom(t);
 		else
 			throw new InvalidInputException("Error -  Must be a single atom or start with method or left paranthesis");
 		if(unprocessedTokens.size() > 0){
@@ -110,10 +113,9 @@ public class ExpressionBuilder {
 		String firstToken = tokens.get(0);
 		if(!firstToken.equals("("))
 			throw new InvalidInputException("Missing ( paranthesis");
-		tokens.remove(0);
 		ArrayList<String> contentsToBuildSExpression = new ArrayList<>();
 		int isEnd = 0, tokensLength = tokens.size(), i;
-		for (i = 0; i < tokensLength; i++) {
+		for (i = 1; i < tokensLength; i++) {
 			String s = tokens.get(i);
 			if(s.equals("("))
 				isEnd--;
@@ -124,8 +126,10 @@ public class ExpressionBuilder {
 			}
 			contentsToBuildSExpression.add(s);
 		}
-		if(isEnd != 1)
+		if(isEnd != 1){
+			unprocessedTokens.addAll(tokens);
 			throw new InvalidInputException("No matching closing parantheis");
+		}
 		if(i < tokensLength-1){
 			if(tokens.get(i+1).equals("."))
 				unprocessedTokens.addAll(tokens.subList(i+2, tokensLength));
