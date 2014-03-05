@@ -22,4 +22,13 @@ public class ComplexSExpression implements SExpression {
 	public void setRight(SExpression right) {
 		this.right = right;
 	}
+
+	@Override
+	public void print() {
+		System.out.print("(");
+		left.print();
+		System.out.print(".");
+		right.print();
+		System.out.print(")");
+	}
 }

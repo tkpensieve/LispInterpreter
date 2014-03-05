@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import process.ExpressionBuilder;
 import process.Tokenizer;
+import tk.sp14.pl.domain.SExpression;
 import tk.sp14.pl.error.InvalidInputException;
 
 public class Runner {
@@ -28,15 +29,16 @@ public class Runner {
 				ArrayList<String> validTokens = new ArrayList<String>();
 				try {
 					 validTokens = Tokenizer.tokenize(line);
-					 System.out.println(validTokens);
 				} catch (InvalidInputException e) {
 					//e.printStackTrace();
 					System.out.println(e.getMessage());
 				}
 				
 				//Build Expression Tree
+				SExpression exp = null;
 				try {
-					eb.build(validTokens);
+					exp = eb.build(validTokens, true);
+					exp.print();
 				} catch (InvalidInputException e) {
 					//e.printStackTrace();
 					System.out.println(e.getMessage());
@@ -44,7 +46,6 @@ public class Runner {
 				
 				//Call eval on the expression tree
 				//Print the result
-				
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

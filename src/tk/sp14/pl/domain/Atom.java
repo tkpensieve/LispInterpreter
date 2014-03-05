@@ -54,4 +54,9 @@ public class Atom implements SExpression {
 	public void setValue(Object value) {
 		this.value = value;
 	}
+
+	@Override
+	public void print() {
+		System.out.print(value.toString());
+	}
 }

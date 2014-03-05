@@ -3,8 +3,8 @@ package tk.sp14.pl.domain;
 import tk.sp14.pl.error.InvalidOperationException;
 
 public class Primitives {
-	public static Atom T = new Atom(true, AtomType.TERMINATORS);
-	public static Atom NIL = new Atom(false, AtomType.TERMINATORS);
+	public static Atom T = new Atom("T", AtomType.TERMINATORS);
+	public static Atom NIL = new Atom("NIL", AtomType.TERMINATORS);
 	
 	public SExpression CAR(SExpression s) throws InvalidOperationException{
 		if(!(s instanceof ComplexSExpression))

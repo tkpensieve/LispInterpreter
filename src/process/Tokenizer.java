@@ -6,7 +6,6 @@ import java.util.Arrays;
 import tk.sp14.pl.error.InvalidInputException;
 
 public class Tokenizer {
-	private static String unprocessedCharacters = "";
 	private static String validCharacters= "^[A-Z()0-9\\s\\.]+$";
 	private static ArrayList<Character> splitChars = new ArrayList<Character>(
 														Arrays.asList('(', ')', ' ', '.'));
@@ -28,9 +27,8 @@ public class Tokenizer {
 				}
 				currentPosition++;
 			}
-			if(parsedPosition != currentPosition)
-				unprocessedCharacters = line.substring(parsedPosition, currentPosition);
-			System.out.println(unprocessedCharacters);
+			if(parsedPosition == 0)
+				validTokens.add(line);
 		}
 		return validTokens;
 	}
