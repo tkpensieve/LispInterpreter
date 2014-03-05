@@ -2,9 +2,9 @@ package tk.sp14.pl.domain;
 
 public class Atom implements SExpression {
 	private AtomType type;
-	private Object value;
+	private String value;
 
-	public Atom(Object value, AtomType type) {
+	public Atom(String value, AtomType type) {
 		super();
 		this.value = value;
 		this.type = type;
@@ -48,10 +48,10 @@ public class Atom implements SExpression {
 	public void setType(AtomType type) {
 		this.type = type;
 	}
-	public Object getValue() {
+	public String getValue() {
 		return value;
 	}
-	public void setValue(Object value) {
+	public void setValue(String value) {
 		this.value = value;
 	}
 

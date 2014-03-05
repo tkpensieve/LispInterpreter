@@ -42,4 +42,60 @@ public class Primitives {
 	public Atom INT(SExpression a){
 		return (a instanceof Atom && ((Atom)a).isNumber()) ? T : NIL;
 	}
+	
+	public Atom PLUS(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return new Atom(Integer.toString(valA+valB), AtomType.NUMBERS);
+	}
+	
+	public Atom MINUS(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return new Atom(Integer.toString(valA - valB), AtomType.NUMBERS);
+	}
+	
+	public Atom LESS(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return valA < valB ? T : NIL;
+	}
+	
+	public Atom GREATER(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return valA > valB ? T : NIL;
+	}
+	
+	public Atom TIMES(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return new Atom(Integer.toString(valA*valB), AtomType.NUMBERS);
+	}
+	
+	public Atom QUOTIENT(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return new Atom(Integer.toString(valA/valB), AtomType.NUMBERS);
+	}
+	
+	public Atom REMAINDER(SExpression a, SExpression b) throws InvalidOperationException{
+		if(!(a instanceof Atom) || !(b instanceof Atom))
+			throw new InvalidOperationException();
+		int valA = Integer.parseInt(((Atom)a).getValue());
+		int valB = Integer.parseInt(((Atom)b).getValue());
+		return new Atom(Integer.toString(valA%valB), AtomType.NUMBERS);
+	}
 }

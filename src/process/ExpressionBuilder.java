@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import sun.awt.windows.ThemeReader;
 import tk.sp14.pl.domain.Atom;
 import tk.sp14.pl.domain.AtomType;
 import tk.sp14.pl.domain.ComplexSExpression;
@@ -69,7 +68,7 @@ public class ExpressionBuilder {
 			return Primitives.NIL;
 		else if(t.matches("^[0-9]+$")){
 			int value = Integer.parseInt(t);
-			return new Atom(value, AtomType.NUMBERS);
+			return new Atom(Integer.toString(value), AtomType.NUMBERS);
 		}
 		else{
 			if(t.length() > 10)
