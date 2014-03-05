@@ -53,8 +53,10 @@ public class ExpressionBuilder {
 		}
 		else if(t.equals("("))
 			exp =  parseWithinParams(validTokens, 1).get(0);
+		else if(validTokens.size() == 1)
+			exp = createAtom(t);
 		else
-			throw new InvalidInputException("Error -  Must start with method, left paranthesis, T or NIL");
+			throw new InvalidInputException("Error -  Must be a single atom or start with method or left paranthesis");
 		if(unprocessedTokens.size() > 0){
 			return new ComplexSExpression(exp, build(unprocessedTokens, false));
 		}
@@ -66,11 +68,11 @@ public class ExpressionBuilder {
 			return Primitives.T;
 		else if("NIL".equals(t))
 			return Primitives.NIL;
-		else if(t.matches("^[0-9]+$")){
+		else if(t.matches("^[+\\-0-9]+$")){
 			int value = Integer.parseInt(t);
 			return new Atom(Integer.toString(value), AtomType.NUMBERS);
 		}
-		else if(t.matches("^[A-Z]+$") && !primitiveMethods.contains(t)){
+		else if(t.matches("^[A-Z][A-Z0-9]+$") && !primitiveMethods.contains(t)){
 			if(t.length() > 10)
 				throw new InvalidInputException("Error - Identifier cannot exceed 10 characters");
 			return new Atom(t, AtomType.IDENTIFIERS);
@@ -144,7 +146,7 @@ public class ExpressionBuilder {
 			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount));
 			return functionSExpression;
 		}
-		else if(primitiveFields.contains(currentToken) || currentToken.matches("^[0-9A-Z]+$")){
+		else if(primitiveFields.contains(currentToken) || currentToken.matches("^[+\\-0-9A-Z]+$")){
 			if(tokensSize == 1){
 				Atom atom = createAtom(currentToken);
 				return new ComplexSExpression(atom, Primitives.NIL);
@@ -182,7 +184,7 @@ public class ExpressionBuilder {
 			return createAtom(currentToken);
 		}
 		else if(currentToken.equals("("))
-			return new ComplexSExpression(Primitives.NIL, parseWithinParams(tokens, 1).get(0)); 
+			return new ComplexSExpression(parseWithinParams(tokens, 1).get(0), Primitives.NIL); 
 		else 
 			throw new InvalidInputException("Error - Wrong placement of symbols");
 	}
