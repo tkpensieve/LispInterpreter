@@ -24,7 +24,9 @@ public class Runner {
 
 		String line;
 		try {
-			while(systemIn!= null && (line = systemIn.readLine()) != "null") {
+			System.out.println("Press q to quit.");
+			System.out.println("Input>>");
+			while(systemIn!= null && !(line = systemIn.readLine()).equals("q")) {
 			    // my program loop.
 				ArrayList<String> validTokens = new ArrayList<String>();
 				SExpression exp = null;
@@ -35,7 +37,10 @@ public class Runner {
 						 exp = eb.build(validTokens, true);
 						 //Call eval on the expression tree
 						 //Print the result
+						 System.out.print("Parsed: ");
 						 exp.print();
+						 System.out.println("");
+						 System.out.println("Input>>");
 					 } catch (InvalidInputException e) {
 						 //e.printStackTrace();
 						 System.out.println(e.getMessage());
