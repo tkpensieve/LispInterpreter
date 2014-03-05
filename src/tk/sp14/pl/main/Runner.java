@@ -27,25 +27,23 @@ public class Runner {
 			while(systemIn!= null && (line = systemIn.readLine()) != "null") {
 			    // my program loop.
 				ArrayList<String> validTokens = new ArrayList<String>();
-				try {
-					 validTokens = Tokenizer.tokenize(line);
-				} catch (InvalidInputException e) {
-					//e.printStackTrace();
-					System.out.println(e.getMessage());
-				}
-				
-				//Build Expression Tree
 				SExpression exp = null;
 				try {
-					exp = eb.build(validTokens, true);
-					exp.print();
+					 validTokens = Tokenizer.tokenize(line);
+					 //Build Expression Tree
+					 try {
+						 exp = eb.build(validTokens, true);
+						 //Call eval on the expression tree
+						 //Print the result
+						 exp.print();
+					 } catch (InvalidInputException e) {
+						 //e.printStackTrace();
+						 System.out.println(e.getMessage());
+					 }
 				} catch (InvalidInputException e) {
 					//e.printStackTrace();
 					System.out.println(e.getMessage());
 				}
-				
-				//Call eval on the expression tree
-				//Print the result
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
