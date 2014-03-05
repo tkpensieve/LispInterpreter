@@ -6,8 +6,8 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
-import process.ExpressionBuilder;
-import process.Tokenizer;
+import tk.sp14.pl.process.ExpressionBuilder;
+import tk.sp14.pl.process.Tokenizer;
 import tk.sp14.pl.domain.SExpression;
 import tk.sp14.pl.error.InvalidInputException;
 
