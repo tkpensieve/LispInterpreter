@@ -22,6 +22,10 @@ public class Primitives {
 		return new ComplexSExpression(left, right);
 	}
 	
+	public SExpression QUOTE(SExpression s){
+		return s;
+	}
+	
 	public Atom ATOM(SExpression sExp){
 		return (sExp instanceof Atom) ? T : NIL;
 	}

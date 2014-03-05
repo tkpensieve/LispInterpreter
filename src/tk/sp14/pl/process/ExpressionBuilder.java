@@ -43,7 +43,7 @@ public class ExpressionBuilder {
 			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(t, argsCount);
 			functionSExpression.setArgs(parseWithinParams(
 											validTokens.subList(1, validTokens.size()), 
-											argsCount, true));
+											argsCount));
 			exp = functionSExpression;
 		}
 		else if(primitiveFields.contains(t)){
@@ -52,7 +52,7 @@ public class ExpressionBuilder {
 			exp = createAtom(t);
 		}
 		else if(t.equals("("))
-			exp =  parseWithinParams(validTokens, 1, true).get(0);
+			exp =  parseWithinParams(validTokens, 1).get(0);
 		else
 			throw new InvalidInputException("Error -  Must start with method, left paranthesis, T or NIL");
 		if(unprocessedTokens.size() > 0){
@@ -70,14 +70,15 @@ public class ExpressionBuilder {
 			int value = Integer.parseInt(t);
 			return new Atom(Integer.toString(value), AtomType.NUMBERS);
 		}
-		else{
+		else if(t.matches("^[A-Z]+$") && !primitiveMethods.contains(t)){
 			if(t.length() > 10)
 				throw new InvalidInputException("Error - Identifier cannot exceed 10 characters");
 			return new Atom(t, AtomType.IDENTIFIERS);
 		}
+		throw new InvalidInputException("Error - Not a valid atom");
 	}
 
-	private ArrayList<SExpression> parseWithinParams(List<String> tokens, Integer expectedCount, boolean canContainDot) 
+	private ArrayList<SExpression> parseWithinParams(List<String> tokens, Integer expectedCount) 
 			throws InvalidInputException {
 		ArrayList<SExpression> args = new ArrayList<SExpression>();
 		//extract within brackets - Brackets verification
@@ -90,15 +91,15 @@ public class ExpressionBuilder {
 						+ " or wrong delimiter. Use space to separate the arguments");
 			//parse each to SExp
 			args.add(
-					buildSingleExpressionFrom(extractedTokens.subList(0, splitPoint), canContainDot)
+					buildSingleExpressionFrom(extractedTokens.subList(0, splitPoint), false)
 					);
 			args.add(
-					buildSingleExpressionFrom(extractedTokens.subList(splitPoint+1, extractedTokens.size()), canContainDot)
+					buildSingleExpressionFrom(extractedTokens.subList(splitPoint+1, extractedTokens.size()), false)
 					);
 		}
 		else{
 			//parse to SExp
-			args.add(buildSingleExpressionFrom(extractedTokens,canContainDot));
+			args.add(buildSingleExpressionFrom(extractedTokens, false));
 		}
 		return args;
 	}
@@ -132,19 +133,22 @@ public class ExpressionBuilder {
 		return contentsToBuildSExpression;
 	}
 
-	private SExpression buildSingleExpressionFrom(List<String> tokens, boolean canContainDot) throws InvalidInputException {
-		String t = tokens.get(0);
+	private SExpression buildSingleExpressionFrom(List<String> tokens, boolean isList) throws InvalidInputException {
 		int tokensSize = tokens.size();
-		if(primitiveMethods.contains(t)){
-			int argsCount = primitiveMethodsParameterCount.get(t);
-			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(t, argsCount);
-			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount, true));
+		if(tokensSize == 0)
+			return Primitives.NIL;
+		String currentToken = tokens.get(0);
+		if(primitiveMethods.contains(currentToken)){
+			int argsCount = primitiveMethodsParameterCount.get(currentToken);
+			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(currentToken, argsCount);
+			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount));
 			return functionSExpression;
-			//allExpressions.addAll(parseWithinParams(validTokens, 1));
 		}
-		else if(primitiveFields.contains(t) || t.matches("^[0-9A-Z]+$")){
-			if(tokensSize == 1)
-				return createAtom(t);
+		else if(primitiveFields.contains(currentToken) || currentToken.matches("^[0-9A-Z]+$")){
+			if(tokensSize == 1){
+				Atom atom = createAtom(currentToken);
+				return new ComplexSExpression(atom, Primitives.NIL);
+			}
 			String nextToken = tokens.get(1);
 			//atom part of a dotted S-Expression
 			if(nextToken.equals(".")){
@@ -154,26 +158,31 @@ public class ExpressionBuilder {
 					TempFunctionSExpression functionSExpression = new TempFunctionSExpression(nextNextToken, argsCount);
 					functionSExpression.setArgs(parseWithinParams(
 													tokens.subList(3, tokensSize), 
-													argsCount, true));
-					return new ComplexSExpression(createAtom(t), functionSExpression);
+													argsCount));
+					return new ComplexSExpression(createAtom(currentToken), functionSExpression);
 				}
 				if(nextNextToken.equals("(")){
-					return new ComplexSExpression(createAtom(t), 
-												parseWithinParams(tokens.subList(2, tokensSize), 1, true).get(0));
+					return new ComplexSExpression(createAtom(currentToken), 
+												parseWithinParams(tokens.subList(2, tokensSize), 1).get(0));
 				}
 				if(tokensSize > 3)
 					throw new InvalidInputException("Error - More than two dotted atoms");
-				return new ComplexSExpression(createAtom(t), createAtom(nextNextToken));
+				return new ComplexSExpression(createAtom(currentToken), createAtom(nextNextToken));
 			}
 			//atom part of a list
-			else if(nextToken.equals(" ")){
+			else if(nextToken.equals(" ")){ 
 				//handle list
+				Atom left = createAtom(currentToken);
+				SExpression right = buildSingleExpressionFrom(tokens.subList(2, tokensSize), true);
+				return new ComplexSExpression(left, right); 
 			}
+			else if(nextToken.equals("("))
+				throw new InvalidInputException("Error - Invalid paranthesis occurrence after an atom");
 			//atom standing on its own
-			return createAtom(t);
+			return createAtom(currentToken);
 		}
-		else if(t.equals("("))
-			return parseWithinParams(tokens, 1, true).get(0);
+		else if(currentToken.equals("("))
+			return new ComplexSExpression(Primitives.NIL, parseWithinParams(tokens, 1).get(0)); 
 		else 
 			throw new InvalidInputException("Error - Wrong placement of symbols");
 	}

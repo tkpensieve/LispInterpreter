@@ -40,6 +40,7 @@ public class Runner {
 						 System.out.print("Parsed: ");
 						 exp.print();
 						 System.out.println("");
+						 System.out.println("Press q to quit.");
 						 System.out.println("Input>>");
 					 } catch (InvalidInputException e) {
 						 //e.printStackTrace();
