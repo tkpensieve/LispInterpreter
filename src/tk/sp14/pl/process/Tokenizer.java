@@ -6,13 +6,13 @@ import java.util.Arrays;
 import tk.sp14.pl.error.InvalidInputException;
 
 public class Tokenizer {
-	private static String validCharacters= "^[A-Z+()\\-0-9\\s\\.]+$";
+	private static String validCharactersSet= "^[A-Z+()\\-0-9\\s\\.]+$";
 	private static ArrayList<Character> splitChars = new ArrayList<Character>(
 														Arrays.asList('(', ')', ' ', '.'));
 	
 	public static ArrayList<String> tokenize(String line) throws InvalidInputException{
 		ArrayList<String> validTokens = new ArrayList<String>();
-		if(!line.matches(validCharacters))
+		if(!line.matches(validCharactersSet))
 			throw new InvalidInputException("Input contains invalid characters. "
 					+ "Valid characters are upper-case letters,numbers, left and right paranthesis and dot");
 		else{

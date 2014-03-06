@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import tk.sp14.pl.process.ExpressionBuilder;
 import tk.sp14.pl.process.Tokenizer;
 import tk.sp14.pl.domain.SExpression;
+import tk.sp14.pl.error.IncompleteInputException;
 import tk.sp14.pl.error.InvalidInputException;
 
 public class Runner {
@@ -44,6 +45,11 @@ public class Runner {
 					 } catch (InvalidInputException e) {
 						 //e.printStackTrace();
 						 System.out.println(e.getMessage());
+						 return;
+					 } catch (IncompleteInputException e) {
+						 // TODO Auto-generated catch block
+						 System.out.println(e.getMessage());
+						 System.out.println("In desired catch");
 					 }
 				} catch (InvalidInputException e) {
 					//e.printStackTrace();
@@ -54,5 +60,4 @@ public class Runner {
 			e.printStackTrace();
 		}
 	}
-
 }

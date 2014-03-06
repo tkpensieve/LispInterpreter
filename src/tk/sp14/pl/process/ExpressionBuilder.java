@@ -12,11 +12,14 @@ import tk.sp14.pl.domain.ComplexSExpression;
 import tk.sp14.pl.domain.Primitives;
 import tk.sp14.pl.domain.SExpression;
 import tk.sp14.pl.domain.TempFunctionSExpression;
+import tk.sp14.pl.error.IncompleteInputException;
 import tk.sp14.pl.error.InvalidInputException;
 
 public class ExpressionBuilder {
 	private static ArrayList<String> primitiveFields = new ArrayList<String>();
 	private static ArrayList<String> primitiveMethods = new ArrayList<String>();
+	private static String validNumberFormat= "^[+\\-]?[0-9]+$";
+	private static String validIdentifierFormat= "^[A-Z][A-Z0-9]*$";
 	private static HashMap<String, Integer> primitiveMethodsParameterCount = new HashMap<String, Integer>();
 	private static ArrayList<String> unprocessedTokens = new ArrayList<>();
 	
@@ -31,60 +34,60 @@ public class ExpressionBuilder {
 		}
 	}
 
-	public SExpression build(ArrayList<String> validTokens, boolean isBeginning) throws InvalidInputException{
+	public SExpression build(ArrayList<String> validTokens, boolean isBeginning) throws InvalidInputException, IncompleteInputException{
 		if(isBeginning){
 			if(unprocessedTokens.size() >0)
 				unprocessedTokens.add(" ");
 			validTokens.addAll(0, unprocessedTokens);
 			unprocessedTokens.clear();
 		}
-		System.out.println(validTokens);
 		String t = validTokens.get(0);
 		SExpression exp;
 		if(validTokens.size() == 1)
 			exp = createAtom(t);
-		if(primitiveMethods.contains(t)){
-			int argsCount = primitiveMethodsParameterCount.get(t);
-			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(t, argsCount);
-			functionSExpression.setArgs(parseWithinParams(
-											validTokens.subList(1, validTokens.size()), 
-											argsCount));
-			exp = functionSExpression;
-		}
-		else if(primitiveFields.contains(t)){
-			if(validTokens.size() > 1)
+		else{
+			if(primitiveFields.contains(t)){
 				throw new InvalidInputException("Error - T and NIL can only occur alone");
-			exp = createAtom(t);
+			}
+			else if(t.equals("("))
+				exp =  parseWithinParams(validTokens, 1).get(0);
+			else
+				//shouldn't come here at all
+				throw new InvalidInputException("Error - Invalid input. Should be single atom or start with paranthesis");
 		}
-		else if(t.equals("("))
-			exp =  parseWithinParams(validTokens, 1).get(0);
-		else
-			throw new InvalidInputException("Error -  Must be a single atom or start with method or left paranthesis");
 		if(unprocessedTokens.size() > 0){
-			return new ComplexSExpression(exp, build(unprocessedTokens, false));
+			ArrayList<String> newTokens = new ArrayList<>();
+			for(String s:unprocessedTokens){
+				newTokens.add(s);
+			}
+			System.out.println(newTokens);
+			unprocessedTokens.clear();
+			System.out.println(newTokens);
+			return new ComplexSExpression(exp, build(newTokens, false));
 		}
 		return exp;
 	}
 	
-	private Atom createAtom(String t) throws InvalidInputException {
+	private Atom createAtom(String t) throws InvalidInputException, IncompleteInputException {
 		if("T".equals(t))
 			return Primitives.T;
 		else if("NIL".equals(t))
 			return Primitives.NIL;
-		else if(t.matches("^[+\\-0-9]+$")){
+		else if(t.matches(validNumberFormat)){
 			int value = Integer.parseInt(t);
 			return new Atom(Integer.toString(value), AtomType.NUMBERS);
 		}
-		else if(t.matches("^[A-Z][A-Z0-9]+$") && !primitiveMethods.contains(t)){
+		else if(t.matches(validIdentifierFormat)){ // && !primitiveMethods.contains(t)){
 			if(t.length() > 10)
 				throw new InvalidInputException("Error - Identifier cannot exceed 10 characters");
 			return new Atom(t, AtomType.IDENTIFIERS);
 		}
-		throw new InvalidInputException("Error - Not a valid atom");
+		unprocessedTokens.add(t);
+		throw new IncompleteInputException("Warning - Currently not a valid atom. Waiting for further input.");
 	}
 
 	private ArrayList<SExpression> parseWithinParams(List<String> tokens, Integer expectedCount) 
-			throws InvalidInputException {
+			throws InvalidInputException, IncompleteInputException {
 		ArrayList<SExpression> args = new ArrayList<SExpression>();
 		//extract within brackets - Brackets verification
 		ArrayList<String> extractedTokens = verifyBracketsAndExtract(tokens);
@@ -92,7 +95,7 @@ public class ExpressionBuilder {
 		if(expectedCount > 1){
 			int splitPoint = extractedTokens.indexOf(" ");
 			if(splitPoint == -1)
-				throw new InvalidInputException("Invalid number of arguments to function call"
+				throw new InvalidInputException("Error - Invalid number of arguments to function call"
 						+ " or wrong delimiter. Use space to separate the arguments");
 			//parse each to SExp
 			args.add(
@@ -109,10 +112,10 @@ public class ExpressionBuilder {
 		return args;
 	}
 
-	private ArrayList<String> verifyBracketsAndExtract(List<String> tokens) throws InvalidInputException {
+	private ArrayList<String> verifyBracketsAndExtract(List<String> tokens) throws InvalidInputException, IncompleteInputException {
 		String firstToken = tokens.get(0);
 		if(!firstToken.equals("("))
-			throw new InvalidInputException("Missing ( paranthesis");
+			throw new InvalidInputException("Error - Missing ( paranthesis");
 		ArrayList<String> contentsToBuildSExpression = new ArrayList<>();
 		int isEnd = 0, tokensLength = tokens.size(), i;
 		for (i = 1; i < tokensLength; i++) {
@@ -128,10 +131,11 @@ public class ExpressionBuilder {
 		}
 		if(isEnd != 1){
 			unprocessedTokens.addAll(tokens);
-			throw new InvalidInputException("No matching closing parantheis");
+			throw new IncompleteInputException("Warning - No matching closing paranthesis. Waiting for further input");
 		}
 		if(i < tokensLength-1){
-			if(tokens.get(i+1).equals("."))
+			String nextTokenAfterBracket = tokens.get(i+1);
+			if(nextTokenAfterBracket.equals(".") || nextTokenAfterBracket.equals(" "))
 				unprocessedTokens.addAll(tokens.subList(i+2, tokensLength));
 			else
 				throw new InvalidInputException("Error - Illegal characters after close paranthesis");
@@ -139,18 +143,20 @@ public class ExpressionBuilder {
 		return contentsToBuildSExpression;
 	}
 
-	private SExpression buildSingleExpressionFrom(List<String> tokens, boolean isList) throws InvalidInputException {
+	private SExpression buildSingleExpressionFrom(List<String> tokens, boolean isList) throws InvalidInputException, IncompleteInputException {
 		int tokensSize = tokens.size();
 		if(tokensSize == 0)
 			return Primitives.NIL;
 		String currentToken = tokens.get(0);
-		if(primitiveMethods.contains(currentToken)){
-			int argsCount = primitiveMethodsParameterCount.get(currentToken);
-			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(currentToken, argsCount);
-			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount));
-			return functionSExpression;
-		}
-		else if(primitiveFields.contains(currentToken) || currentToken.matches("^[+\\-0-9A-Z]+$")){
+//		if(primitiveMethods.contains(currentToken)){
+//			int argsCount = primitiveMethodsParameterCount.get(currentToken);
+//			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(currentToken, argsCount);
+//			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount));
+//			return functionSExpression;
+//		}
+		if(primitiveFields.contains(currentToken) || 
+				currentToken.matches(validIdentifierFormat) || 
+				currentToken.matches(validNumberFormat)){
 			if(tokensSize == 1){
 				Atom atom = createAtom(currentToken);
 				return new ComplexSExpression(atom, Primitives.NIL);
