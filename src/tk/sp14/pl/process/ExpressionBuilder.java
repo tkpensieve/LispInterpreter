@@ -11,7 +11,6 @@ import tk.sp14.pl.domain.AtomType;
 import tk.sp14.pl.domain.ComplexSExpression;
 import tk.sp14.pl.domain.Primitives;
 import tk.sp14.pl.domain.SExpression;
-import tk.sp14.pl.domain.TempFunctionSExpression;
 import tk.sp14.pl.error.IncompleteInputException;
 import tk.sp14.pl.error.InvalidInputException;
 
@@ -135,9 +134,10 @@ public class ExpressionBuilder {
 		}
 		if(i < tokensLength-1){
 			String nextTokenAfterBracket = tokens.get(i+1);
-			if(nextTokenAfterBracket.equals(".") || nextTokenAfterBracket.equals(" "))
-				unprocessedTokens.addAll(tokens.subList(i+2, tokensLength));
-			else
+//			if(nextTokenAfterBracket.equals(".") || nextTokenAfterBracket.equals(" "))
+//				unprocessedTokens.addAll(tokens.subList(i+2, tokensLength));
+//			else
+			if(!nextTokenAfterBracket.equals(" "))
 				throw new InvalidInputException("Error - Illegal characters after close paranthesis");
 		}
 		return contentsToBuildSExpression;
@@ -165,14 +165,14 @@ public class ExpressionBuilder {
 			//atom part of a dotted S-Expression
 			if(nextToken.equals(".")){
 				String nextNextToken = tokens.get(2);
-				if(primitiveMethods.contains(nextNextToken)){
-					int argsCount = primitiveMethodsParameterCount.get(nextNextToken);
-					TempFunctionSExpression functionSExpression = new TempFunctionSExpression(nextNextToken, argsCount);
-					functionSExpression.setArgs(parseWithinParams(
-													tokens.subList(3, tokensSize), 
-													argsCount));
-					return new ComplexSExpression(createAtom(currentToken), functionSExpression);
-				}
+//				if(primitiveMethods.contains(nextNextToken)){
+//					int argsCount = primitiveMethodsParameterCount.get(nextNextToken);
+//					TempFunctionSExpression functionSExpression = new TempFunctionSExpression(nextNextToken, argsCount);
+//					functionSExpression.setArgs(parseWithinParams(
+//													tokens.subList(3, tokensSize), 
+//													argsCount));
+//					return new ComplexSExpression(createAtom(currentToken), functionSExpression);
+//				}
 				if(nextNextToken.equals("(")){
 					return new ComplexSExpression(createAtom(currentToken), 
 												parseWithinParams(tokens.subList(2, tokensSize), 1).get(0));
@@ -193,9 +193,22 @@ public class ExpressionBuilder {
 			//atom standing on its own
 			return createAtom(currentToken);
 		}
-		else if(currentToken.equals("("))
-			return new ComplexSExpression(parseWithinParams(tokens, 1).get(0), Primitives.NIL); 
+		else if(currentToken.equals("(")){
+			// List of List scenario - Identify if inside list is in between or at end
+			if(tokens.indexOf(")") == tokensSize-1)
+					return new ComplexSExpression(parseWithinParams(tokens, 1).get(0), Primitives.NIL);
+			else{
+				ArrayList<String> innerList = verifyBracketsAndExtract(tokens);
+				SExpression left = buildSingleExpressionFrom(innerList, true);
+				SExpression right = buildSingleExpressionFrom(tokens.subList(tokens.indexOf(")")+2, tokensSize), 
+																true);
+				return new ComplexSExpression(left, right);
+			}
+		}
+		else if(currentToken.equals(")") || currentToken.equals(" ")){
+			return buildSingleExpressionFrom(tokens.subList(1, tokensSize), isList);
+		}
 		else 
-			throw new InvalidInputException("Error - Wrong placement of symbols");
+			throw new InvalidInputException(currentToken + "Error - Wrong placement of symbols");
 	}
 }
