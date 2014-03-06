@@ -16,6 +16,9 @@ public class Tokenizer {
 			throw new InvalidInputException("Input contains invalid characters. "
 					+ "Valid characters are upper-case letters,numbers, left and right paranthesis and dot");
 		else{
+			//remove unnecessary spaces
+			line = line.replace(" .", ".");
+			line = line.replace(". ", ".");
 			char[] chars = line.toCharArray();
 			int parsedPosition = 0, currentPosition = 0;
 			for (char c : chars) {
@@ -30,6 +33,7 @@ public class Tokenizer {
 			if(parsedPosition != currentPosition)
 				validTokens.add(line.substring(parsedPosition, currentPosition));
 		}
+		
 		return validTokens;
 	}
 }
