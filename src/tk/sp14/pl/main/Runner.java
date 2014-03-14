@@ -7,16 +7,19 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import tk.sp14.pl.process.ExpressionBuilder;
+import tk.sp14.pl.process.ExpressionEvaluator;
 import tk.sp14.pl.process.Tokenizer;
 import tk.sp14.pl.domain.SExpression;
 import tk.sp14.pl.error.IncompleteInputException;
 import tk.sp14.pl.error.InvalidInputException;
+import tk.sp14.pl.error.InvalidOperationException;
 
 public class Runner {
 
 	public static void main(String[] args) {
 		BufferedReader systemIn = null;
 		ExpressionBuilder eb = new ExpressionBuilder();
+		ExpressionEvaluator ev = new ExpressionEvaluator();
 		try {
 			systemIn = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
@@ -35,24 +38,32 @@ public class Runner {
 					 //Build Expression Tree
 					 try {
 						 exp = eb.build(validTokens, true);
-						 //Call eval on the expression tree
-						 //Print the result
 						 System.out.print("] ");
 						 exp.print();
 						 System.out.println("");
-						 System.out.println("Press q to quit.");
-						 System.out.println("Input>>");
+						 SExpression result = null;
+						 //Call eval on the expression tree
+						 try {
+							 result = ev.evaluate(exp, false);
+							 //Print the result
+							 System.out.print("]] ");
+							 result.print();
+							 System.out.println("");
+							 System.out.println("Press q to quit.");
+							 System.out.println("Input>>");
+						 } catch (InvalidOperationException e) {
+							 System.out.println(e.getMessage());
+							 return;
+						 }
 					 } catch (InvalidInputException e) {
-						 //e.printStackTrace();
 						 System.out.println(e.getMessage());
 						 return;
 					 } catch (IncompleteInputException e) {
-						 // TODO Auto-generated catch block
 						 System.out.println(e.getMessage());
 					 }
 				} catch (InvalidInputException e) {
-					//e.printStackTrace();
 					System.out.println(e.getMessage());
+					return;
 				}
 			}
 		} catch (IOException e) {
