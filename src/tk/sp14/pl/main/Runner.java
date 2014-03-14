@@ -49,7 +49,6 @@ public class Runner {
 					 } catch (IncompleteInputException e) {
 						 // TODO Auto-generated catch block
 						 System.out.println(e.getMessage());
-						 System.out.println("In desired catch");
 					 }
 				} catch (InvalidInputException e) {
 					//e.printStackTrace();

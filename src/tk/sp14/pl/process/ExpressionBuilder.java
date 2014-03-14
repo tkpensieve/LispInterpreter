@@ -35,7 +35,10 @@ public class ExpressionBuilder {
 
 	public SExpression build(ArrayList<String> validTokens, boolean isBeginning) throws InvalidInputException, IncompleteInputException{
 		if(isBeginning){
-			if(unprocessedTokens.size() >0)
+			int unprocessedTokensCount = unprocessedTokens.size();
+			if(unprocessedTokensCount >0 && 
+					!unprocessedTokens.get(unprocessedTokensCount-1).equals(" ") &&
+					!validTokens.get(0).equals(" "))
 				unprocessedTokens.add(" ");
 			validTokens.addAll(0, unprocessedTokens);
 			unprocessedTokens.clear();
@@ -48,8 +51,11 @@ public class ExpressionBuilder {
 			if(primitiveFields.contains(t)){
 				throw new InvalidInputException("Error - T and NIL can only occur alone");
 			}
-			else if(t.equals("("))
-				exp =  parseWithinParams(validTokens, 1).get(0);
+			else if(t.equals("(")){
+				ArrayList<String> tokensWithinBrackets = verifyBracketsAndExtract(validTokens);
+				unprocessedTokens.addAll(validTokens.subList(tokensWithinBrackets.size()+2, validTokens.size()));
+				exp =  buildSingleExpressionFrom(tokensWithinBrackets, false);
+			}
 			else
 				//shouldn't come here at all
 				throw new InvalidInputException("Error - Invalid input. Should be single atom or start with paranthesis");
@@ -62,7 +68,14 @@ public class ExpressionBuilder {
 			System.out.println(newTokens);
 			unprocessedTokens.clear();
 			System.out.println(newTokens);
-			return new ComplexSExpression(exp, build(newTokens, false));
+			SExpression right = null;
+			try{
+				 right = build(newTokens, false);
+			}catch(Exception e){
+				unprocessedTokens.addAll(newTokens);
+				return exp;
+			}
+			return new ComplexSExpression(exp, right);
 		}
 		return exp;
 	}
@@ -83,32 +96,6 @@ public class ExpressionBuilder {
 		}
 		unprocessedTokens.add(t);
 		throw new IncompleteInputException("Warning - Currently not a valid atom. Waiting for further input.");
-	}
-
-	private ArrayList<SExpression> parseWithinParams(List<String> tokens, Integer expectedCount) 
-			throws InvalidInputException, IncompleteInputException {
-		ArrayList<SExpression> args = new ArrayList<SExpression>();
-		//extract within brackets - Brackets verification
-		ArrayList<String> extractedTokens = verifyBracketsAndExtract(tokens);
-		//split based on noOfArgs
-		if(expectedCount > 1){
-			int splitPoint = extractedTokens.indexOf(" ");
-			if(splitPoint == -1)
-				throw new InvalidInputException("Error - Invalid number of arguments to function call"
-						+ " or wrong delimiter. Use space to separate the arguments");
-			//parse each to SExp
-			args.add(
-					buildSingleExpressionFrom(extractedTokens.subList(0, splitPoint), false)
-					);
-			args.add(
-					buildSingleExpressionFrom(extractedTokens.subList(splitPoint+1, extractedTokens.size()), false)
-					);
-		}
-		else{
-			//parse to SExp
-			args.add(buildSingleExpressionFrom(extractedTokens, false));
-		}
-		return args;
 	}
 
 	private ArrayList<String> verifyBracketsAndExtract(List<String> tokens) throws InvalidInputException, IncompleteInputException {
@@ -132,14 +119,6 @@ public class ExpressionBuilder {
 			unprocessedTokens.addAll(tokens);
 			throw new IncompleteInputException("Warning - No matching closing paranthesis. Waiting for further input");
 		}
-		if(i < tokensLength-1){
-			String nextTokenAfterBracket = tokens.get(i+1);
-//			if(nextTokenAfterBracket.equals(".") || nextTokenAfterBracket.equals(" "))
-//				unprocessedTokens.addAll(tokens.subList(i+2, tokensLength));
-//			else
-			if(!nextTokenAfterBracket.equals(" "))
-				throw new InvalidInputException("Error - Illegal characters after close paranthesis");
-		}
 		return contentsToBuildSExpression;
 	}
 
@@ -148,12 +127,6 @@ public class ExpressionBuilder {
 		if(tokensSize == 0)
 			return Primitives.NIL;
 		String currentToken = tokens.get(0);
-//		if(primitiveMethods.contains(currentToken)){
-//			int argsCount = primitiveMethodsParameterCount.get(currentToken);
-//			TempFunctionSExpression functionSExpression = new TempFunctionSExpression(currentToken, argsCount);
-//			functionSExpression.setArgs(parseWithinParams(tokens.subList(1, tokensSize), argsCount));
-//			return functionSExpression;
-//		}
 		if(primitiveFields.contains(currentToken) || 
 				currentToken.matches(validIdentifierFormat) || 
 				currentToken.matches(validNumberFormat)){
@@ -162,24 +135,23 @@ public class ExpressionBuilder {
 				return new ComplexSExpression(atom, Primitives.NIL);
 			}
 			String nextToken = tokens.get(1);
-			//atom part of a dotted S-Expression
+			//atom part of a dotted S-Expression (Valid only with QUOTE)
 			if(nextToken.equals(".")){
+				SExpression left = createAtom(currentToken);
 				String nextNextToken = tokens.get(2);
-//				if(primitiveMethods.contains(nextNextToken)){
-//					int argsCount = primitiveMethodsParameterCount.get(nextNextToken);
-//					TempFunctionSExpression functionSExpression = new TempFunctionSExpression(nextNextToken, argsCount);
-//					functionSExpression.setArgs(parseWithinParams(
-//													tokens.subList(3, tokensSize), 
-//													argsCount));
-//					return new ComplexSExpression(createAtom(currentToken), functionSExpression);
-//				}
 				if(nextNextToken.equals("(")){
-					return new ComplexSExpression(createAtom(currentToken), 
-												parseWithinParams(tokens.subList(2, tokensSize), 1).get(0));
+					ArrayList<String> extractedTokens = verifyBracketsAndExtract(tokens.subList(2, tokensSize));
+					List<String> remainingTokens = tokens.subList(2+extractedTokens.size()+2, tokensSize);
+					ComplexSExpression exp = new ComplexSExpression(buildSingleExpressionFrom(extractedTokens, true), Primitives.NIL);
+					if(remainingTokens.size() == 0)
+						return new ComplexSExpression(left, exp);
+					String tokenAfterBrackets = remainingTokens.get(0);
+					if(tokenAfterBrackets.equals("."))
+						throw new InvalidInputException("Error - More than two dotted atoms");
+					if(tokenAfterBrackets.equals(" "))
+						throw new InvalidInputException("Error - More than two dotted atoms");
 				}
-				if(tokensSize > 3)
-					throw new InvalidInputException("Error - More than two dotted atoms");
-				return new ComplexSExpression(createAtom(currentToken), createAtom(nextNextToken));
+				return new ComplexSExpression(left, createAtom(nextNextToken));
 			}
 			//atom part of a list
 			else if(nextToken.equals(" ")){ 
@@ -191,24 +163,28 @@ public class ExpressionBuilder {
 			else if(nextToken.equals("("))
 				throw new InvalidInputException("Error - Invalid paranthesis occurrence after an atom");
 			//atom standing on its own
-			return createAtom(currentToken);
+			if(isList)
+				return new ComplexSExpression(createAtom(currentToken), Primitives.NIL);
+			else
+				return createAtom(currentToken);
 		}
 		else if(currentToken.equals("(")){
 			// List of List scenario - Identify if inside list is in between or at end
-			if(tokens.indexOf(")") == tokensSize-1)
-					return new ComplexSExpression(parseWithinParams(tokens, 1).get(0), Primitives.NIL);
-			else{
-				ArrayList<String> innerList = verifyBracketsAndExtract(tokens);
-				SExpression left = buildSingleExpressionFrom(innerList, true);
-				SExpression right = buildSingleExpressionFrom(tokens.subList(tokens.indexOf(")")+2, tokensSize), 
-																true);
-				return new ComplexSExpression(left, right);
-			}
+			ArrayList<String> extractedTokens = verifyBracketsAndExtract(tokens);
+			SExpression left = buildSingleExpressionFrom(extractedTokens, true);
+			List<String> remainingTokens = tokens.subList(2+extractedTokens.size(), tokensSize);
+			if(remainingTokens.size() == 0)
+				return new ComplexSExpression(left, Primitives.NIL);
+			String tokenAfterBrackets = remainingTokens.get(0);
+			if(tokenAfterBrackets.equals(" "))
+				return new ComplexSExpression(left, buildSingleExpressionFrom(remainingTokens, true));
+			else 
+				throw new InvalidInputException(currentToken + " - Error - Wrong placement of symbols");
 		}
-		else if(currentToken.equals(")") || currentToken.equals(" ")){
-			return buildSingleExpressionFrom(tokens.subList(1, tokensSize), isList);
+		else if(currentToken.equals(" ")){
+			return buildSingleExpressionFrom(tokens.subList(1, tokensSize), true);
 		}
 		else 
-			throw new InvalidInputException(currentToken + "Error - Wrong placement of symbols");
+			throw new InvalidInputException(currentToken + " - Error - Wrong placement of symbols");
 	}
 }

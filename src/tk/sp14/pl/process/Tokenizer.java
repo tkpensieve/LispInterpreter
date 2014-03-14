@@ -14,7 +14,7 @@ public class Tokenizer {
 		ArrayList<String> validTokens = new ArrayList<String>();
 		if(!line.matches(validCharactersSet))
 			throw new InvalidInputException("Input contains invalid characters. "
-					+ "Valid characters are upper-case letters,numbers, left and right paranthesis and dot");
+					+ "Valid characters are upper-case letters,numbers, plus, minus, left and right paranthesis and dot");
 		else{
 			//remove unnecessary spaces
 			line = line.replace(" .", ".");
