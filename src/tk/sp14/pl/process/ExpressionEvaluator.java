@@ -156,8 +156,10 @@ public class ExpressionEvaluator {
 			} catch (InvalidOperationException e) {
 				throw new InvalidOperationException("Error in Params of COND: " + e.getMessage());
 			}
-			//FIXME:must consider as boolean 
-			if(evaluate(primitiveUtilities.CAR(conditionExpressionPair),true, aList).equals(Primitives.T)){
+			SExpression booleanResult = evaluate(primitiveUtilities.CAR(conditionExpressionPair),true, aList);
+			if (!(booleanResult instanceof Atom) || !((Atom)booleanResult).getType().equals(AtomType.TERMINATORS))	
+				throw new InvalidOperationException("Condition must evaluate to T or NIL");
+			if(booleanResult.equals(Primitives.T)){
 				return evaluate(primitiveUtilities.CDR(conditionExpressionPair), true, aList);
 			}
 			allParams = primitiveUtilities.CDR(allParams);
