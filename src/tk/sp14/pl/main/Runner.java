@@ -44,7 +44,7 @@ public class Runner {
 						 SExpression result = null;
 						 //Call eval on the expression tree
 						 try {
-							 result = ev.evaluate(exp, false);
+							 result = ev.evaluate(exp, false, new ArrayList<SExpression>());
 							 //Print the result
 							 System.out.print("]] ");
 							 result.print();
