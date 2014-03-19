@@ -4,18 +4,21 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import tk.sp14.pl.domain.Atom;
+import tk.sp14.pl.domain.AtomType;
 import tk.sp14.pl.domain.ComplexSExpression;
 import tk.sp14.pl.domain.Primitives;
 import tk.sp14.pl.domain.SExpression;
+import tk.sp14.pl.domain.FunctionSExpression;
 import tk.sp14.pl.error.InvalidOperationException;
 
 public class ExpressionEvaluator {
 	private static ArrayList<String> primitiveFields = new ArrayList<String>();
 	private static ArrayList<Method> primitiveMethods = new ArrayList<Method>();
 	private static HashMap<String, Integer> primitiveMethodsParameterCount = new HashMap<String, Integer>();
-//	private static ArrayList<SExpression> dList = new ArrayList<>();
+	private static ArrayList<FunctionSExpression> dList = new ArrayList<>();
 	private static ArrayList<String> specialFunctionsNames = new ArrayList<>();
 	private Primitives primitiveUtilities;
 	
@@ -23,6 +26,7 @@ public class ExpressionEvaluator {
 		super();
 		primitiveUtilities = new Primitives();
 		specialFunctionsNames.add("COND");
+		specialFunctionsNames.add("DEFUN");
 		for (Field f : Primitives.class.getDeclaredFields()) {
 			primitiveFields.add(f.getName());
 		}
@@ -39,7 +43,6 @@ public class ExpressionEvaluator {
 		SExpression right = primitiveUtilities.CDR(exp);
 		String leftValue = ((Atom)left).getValue();
 		if(!isInternal){
-			//handle UDF
 			if(!primitiveMethodsParameterCount.keySet().contains(leftValue) && !specialFunctionsNames.contains(leftValue)){
 				left.print();
 				System.out.println(" not a function.");
@@ -50,36 +53,91 @@ public class ExpressionEvaluator {
 			return right;
 		if(leftValue.equals("COND"))
 			return evaluateConditional(exp);
+		if(leftValue.equals("DEFUN")){
+			return addUserDefinedFunction(exp);
+		}
 		SExpression result = null;
 		ArrayList<SExpression> params = getParams(right);
+		if(primitiveMethodsParameterCount.keySet().contains(leftValue)){
+			int expectedParameterCount = primitiveMethodsParameterCount.get(leftValue);
+			//verify params count
+			if(params.size() != expectedParameterCount)
+				throw new InvalidOperationException("Wrong number of arguments passed");
+			//call appropriate function
+			if(leftValue.equals("CAR"))
+				result = primitiveUtilities.CAR(params.get(0));
+			else if(leftValue.equals("CDR"))
+				result = primitiveUtilities.CDR(params.get(0));
+			else if(leftValue.equals("EQ"))
+				result = primitiveUtilities.EQ(params.get(0), params.get(1));
+			else if(leftValue.equals("CONS"))
+				result = primitiveUtilities.CONS(params.get(0), params.get(1));
+			else if(leftValue.equals("PLUS"))
+				result = primitiveUtilities.PLUS(params.get(0), params.get(1));
+			else if(leftValue.equals("MINUS"))
+				result = primitiveUtilities.MINUS(params.get(0), params.get(1));
+			else if(leftValue.equals("LESS"))
+				result = primitiveUtilities.LESS(params.get(0), params.get(1));
+			else if(leftValue.equals("GREATER"))
+				result = primitiveUtilities.GREATER(params.get(0), params.get(1));
+			else if(leftValue.equals("TIMES"))
+				result = primitiveUtilities.TIMES(params.get(0), params.get(1));
+			else if(leftValue.equals("QUOTIENT"))
+				result = primitiveUtilities.QUOTIENT(params.get(0), params.get(1));
+			else if(leftValue.equals("REMAINDER"))
+				result = primitiveUtilities.REMAINDER(params.get(0), params.get(1));
+		}
 		//handle UDF
-		int expectedParameterCount = primitiveMethodsParameterCount.get(leftValue);
-		//verify params
-		if(params.size() != expectedParameterCount)
-			throw new InvalidOperationException("Wrong number of arguments passed");
-		if(leftValue.equals("CAR"))
-			result = primitiveUtilities.CAR(params.get(0));
-		else if(leftValue.equals("CDR"))
-			result = primitiveUtilities.CDR(params.get(0));
-		else if(leftValue.equals("EQ"))
-			result = primitiveUtilities.EQ(params.get(0), params.get(1));
-		else if(leftValue.equals("CONS"))
-			result = primitiveUtilities.CONS(params.get(0), params.get(1));
-		else if(leftValue.equals("PLUS"))
-			result = primitiveUtilities.PLUS(params.get(0), params.get(1));
-		else if(leftValue.equals("MINUS"))
-			result = primitiveUtilities.MINUS(params.get(0), params.get(1));
-		else if(leftValue.equals("LESS"))
-			result = primitiveUtilities.LESS(params.get(0), params.get(1));
-		else if(leftValue.equals("GREATER"))
-			result = primitiveUtilities.GREATER(params.get(0), params.get(1));
-		else if(leftValue.equals("TIMES"))
-			result = primitiveUtilities.TIMES(params.get(0), params.get(1));
-		else if(leftValue.equals("QUOTIENT"))
-			result = primitiveUtilities.QUOTIENT(params.get(0), params.get(1));
-		else if(leftValue.equals("REMAINDER"))
-			result = primitiveUtilities.REMAINDER(params.get(0), params.get(1));
+		else if(specialFunctionsNames.contains(leftValue)){
+			for(FunctionSExpression fn : dList){
+				if(fn.getName().equals(leftValue)){
+					ArrayList<SExpression> aList = new ArrayList<>();
+					ArrayList<String> parameterNames = fn.getParameterNames();
+					int expectedParameterCount = parameterNames.size();
+					//verify params count
+					if(params.size() != expectedParameterCount)
+						throw new InvalidOperationException("Wrong number of arguments passed");
+					int i = 0;
+					for (String p : parameterNames) {
+						aList.add(new ComplexSExpression(new Atom(p, AtomType.IDENTIFIERS), params.get(i)));
+						i++;
+					}
+					result = evaluateWithAList(fn.getBody(), aList);
+					break;
+				}
+			}
+		}
 		return result;
+	}
+
+	private SExpression evaluateWithAList(SExpression body, ArrayList<SExpression> aList) {
+		
+		return null;
+	}
+
+	private SExpression addUserDefinedFunction(SExpression exp) throws InvalidOperationException {
+		try{
+			SExpression allParams = primitiveUtilities.CDR(exp);
+			String functionName = ((Atom)primitiveUtilities.CAR(allParams)).getValue();
+			allParams = primitiveUtilities.CDR(allParams);
+			ArrayList<String> parameterNames = new ArrayList<>();
+			for(SExpression s: getParams(primitiveUtilities.CAR(allParams))){
+				Atom a = (Atom)s;
+				parameterNames.add(a.getValue());
+			}
+			SExpression body = primitiveUtilities.CDR(allParams);
+			FunctionSExpression expression = new FunctionSExpression(functionName, parameterNames, body);
+			addToDList(expression);
+			expression.print();
+			return new Atom(functionName, AtomType.IDENTIFIERS);
+		} catch (InvalidOperationException e) {
+			throw new InvalidOperationException("Error in DEFUN syntax: " + e.getMessage());
+		}
+	}
+
+	private void addToDList(FunctionSExpression expression) {
+		dList.add(expression);
+		specialFunctionsNames.add(expression.getName());
 	}
 
 	private SExpression evaluateConditional(SExpression exp) throws InvalidOperationException{
@@ -89,7 +147,7 @@ public class ExpressionEvaluator {
 			try {
 				conditionExpressionPair = validationAndExtractBooleanParam(allParams);
 			} catch (InvalidOperationException e) {
-				throw new InvalidOperationException("Error in Params of COND" + e.getMessage());
+				throw new InvalidOperationException("Error in Params of COND: " + e.getMessage());
 			}
 			if(evaluate(primitiveUtilities.CAR(conditionExpressionPair),true).equals(Primitives.T)){
 				return evaluate(primitiveUtilities.CDR(conditionExpressionPair), true);
@@ -124,9 +182,8 @@ public class ExpressionEvaluator {
 			return expression;
 		SExpression left = primitiveUtilities.CAR(expression);
 		String leftValue = ((Atom)left).getValue();
-		if(primitiveMethodsParameterCount.keySet().contains(leftValue))
+		if(primitiveMethodsParameterCount.keySet().contains(leftValue) || specialFunctionsNames.contains(leftValue))
 			return evaluate(expression, true);
-		//handle UDF
 		return expression;
 	}	
 }
