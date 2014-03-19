@@ -110,6 +110,7 @@ public class ExpressionEvaluator {
 					SExpression body = fn.getBody();
 					SExpression toBeExecuted = primitiveUtilities.CAR(body);
 					result = evaluate(toBeExecuted, true, aList);
+					aList.subList(aList.size() - expectedParameterCount, aList.size()).clear();
 					break;
 				}
 			}
