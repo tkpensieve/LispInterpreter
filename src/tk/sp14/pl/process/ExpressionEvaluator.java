@@ -3,9 +3,8 @@ package tk.sp14.pl.process;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-
-import com.sun.org.apache.bcel.internal.generic.ATHROW;
 
 import tk.sp14.pl.domain.Atom;
 import tk.sp14.pl.domain.AtomType;
@@ -58,7 +57,7 @@ public class ExpressionEvaluator {
 			return addUserDefinedFunction(exp, aList);
 		}
 		SExpression result = null;
-		ArrayList<SExpression> params = getParams(right, aList);
+		ArrayList<SExpression> params = getParams(right, aList, false);
 		if(primitiveMethodsParameterCount.keySet().contains(leftValue)){
 			int expectedParameterCount = primitiveMethodsParameterCount.get(leftValue);
 			//verify params count
@@ -69,6 +68,12 @@ public class ExpressionEvaluator {
 				result = primitiveUtilities.CAR(params.get(0));
 			else if(leftValue.equals("CDR"))
 				result = primitiveUtilities.CDR(params.get(0));
+			else if(leftValue.equals("ATOM"))
+				result = primitiveUtilities.ATOM(params.get(0));
+			else if(leftValue.equals("INT"))
+				result = primitiveUtilities.INT(params.get(0));
+			else if(leftValue.equals("NULL"))
+				result = primitiveUtilities.NULL(params.get(0));
 			else if(leftValue.equals("EQ"))
 				result = primitiveUtilities.EQ(params.get(0), params.get(1));
 			else if(leftValue.equals("CONS"))
@@ -118,14 +123,19 @@ public class ExpressionEvaluator {
 			String functionName = ((Atom)primitiveUtilities.CAR(allParams)).getValue();
 			allParams = primitiveUtilities.CDR(allParams);
 			ArrayList<String> parameterNames = new ArrayList<>();
-			for(SExpression s: getParams(primitiveUtilities.CAR(allParams), aList)){
+			for(SExpression s: getParams(primitiveUtilities.CAR(allParams), aList, true)){
 				Atom a = (Atom)s;
 				parameterNames.add(a.getValue());
 			}
 			SExpression body = primitiveUtilities.CDR(allParams);
+			//handle syntax error
+			if(!primitiveUtilities.CDR(body).equals(Primitives.NIL))
+				throw new InvalidOperationException("More than one s-expression for body");
+			
 			FunctionSExpression expression = new FunctionSExpression(functionName, parameterNames, body);
 			addToDList(expression);
 			expression.print();
+			
 			return new Atom(functionName, AtomType.IDENTIFIERS);
 		} catch (InvalidOperationException e) {
 			throw new InvalidOperationException("Error in DEFUN syntax: " + e.getMessage());
@@ -146,6 +156,7 @@ public class ExpressionEvaluator {
 			} catch (InvalidOperationException e) {
 				throw new InvalidOperationException("Error in Params of COND: " + e.getMessage());
 			}
+			//FIXME:must consider as boolean 
 			if(evaluate(primitiveUtilities.CAR(conditionExpressionPair),true, aList).equals(Primitives.T)){
 				return evaluate(primitiveUtilities.CDR(conditionExpressionPair), true, aList);
 			}
@@ -161,27 +172,27 @@ public class ExpressionEvaluator {
 		return new ComplexSExpression(left, right);
 	}
 
-	private ArrayList<SExpression> getParams(SExpression expression, ArrayList<SExpression> aList) throws InvalidOperationException {
+	private ArrayList<SExpression> getParams(SExpression expression, ArrayList<SExpression> aList, boolean isFunctionDeclaration) throws InvalidOperationException {
 		ArrayList<SExpression> params = new ArrayList<>();
 		SExpression cdr = primitiveUtilities.CDR(expression);
 		SExpression car = primitiveUtilities.CAR(expression);
 		if(cdr.equals(Primitives.NIL)){
-			params.add(evaluateOnNeedAndExtract(car, aList));
+			params.add(evaluateOnNeedAndExtract(car, aList, isFunctionDeclaration));
 		}else{
-			params.add(evaluateOnNeedAndExtract(car, aList));
-			params.addAll(getParams(cdr, aList));
+			params.add(evaluateOnNeedAndExtract(car, aList, isFunctionDeclaration));
+			params.addAll(getParams(cdr, aList, isFunctionDeclaration));
 		}
 		return params;
 	}
 
-	private SExpression evaluateOnNeedAndExtract(SExpression expression, ArrayList<SExpression> aList) throws InvalidOperationException {
+	private SExpression evaluateOnNeedAndExtract(SExpression expression, ArrayList<SExpression> aList, boolean isFunctionDeclaration) throws InvalidOperationException {
 		if(primitiveUtilities.ATOM(expression).equals(Primitives.T)){
 			Atom a = (Atom)expression;
 			if(a.getType().equals(AtomType.IDENTIFIERS)){
-				for (SExpression sExpression : aList) {
-					if(((Atom)primitiveUtilities.CAR(sExpression)).getValue().equals(a.getValue()))
-						return primitiveUtilities.CDR(sExpression);
-				}
+				SExpression match = getValueFromAList(a, aList, isFunctionDeclaration);
+				if(!isFunctionDeclaration && match.equals(Primitives.NIL))
+					throw new InvalidOperationException("Undeclared symbol is used");
+				return primitiveUtilities.CDR(match);
 			}
 			return a;
 		}
@@ -190,5 +201,22 @@ public class ExpressionEvaluator {
 		if(primitiveMethodsParameterCount.keySet().contains(leftValue) || specialFunctionsNames.contains(leftValue))
 			return evaluate(expression, true, aList);
 		return expression;
+	}
+
+	private SExpression getValueFromAList(Atom atom, ArrayList<SExpression> aList, boolean isFunctionDeclaration) throws InvalidOperationException {
+		if(isFunctionDeclaration)
+			return new ComplexSExpression(atom, atom);
+		Collections.reverse(aList);
+		SExpression match = null;
+		for (SExpression sExpression : aList) {
+			if(((Atom)primitiveUtilities.CAR(sExpression)).getValue().equals(atom.getValue())){
+				match = sExpression;
+				break;
+			}	
+		}
+		Collections.reverse(aList);
+		if(match == null)
+			return Primitives.NIL;
+		return match;
 	}	
 }
