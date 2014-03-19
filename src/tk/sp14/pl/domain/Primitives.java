@@ -92,6 +92,8 @@ public class Primitives {
 			throw new InvalidOperationException("Error - QUOTIENT is defined only for integers");
 		int valA = Integer.parseInt(((Atom)a).getValue());
 		int valB = Integer.parseInt(((Atom)b).getValue());
+		if(valB == 0)
+			throw new InvalidOperationException("Error: Divide by zero not allowed");
 		return new Atom(Integer.toString(valA/valB), AtomType.NUMBERS);
 	}
 	
@@ -100,6 +102,8 @@ public class Primitives {
 			throw new InvalidOperationException("Error - REMAINDER is defined only for integers");
 		int valA = Integer.parseInt(((Atom)a).getValue());
 		int valB = Integer.parseInt(((Atom)b).getValue());
+		if(valB == 0)
+			throw new InvalidOperationException("Error: Divide by zero not allowed");
 		return new Atom(Integer.toString(valA%valB), AtomType.NUMBERS);
 	}
 }
