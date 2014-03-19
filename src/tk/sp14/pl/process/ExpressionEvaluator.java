@@ -146,8 +146,20 @@ public class ExpressionEvaluator {
 	}
 
 	private void addToDList(FunctionSExpression expression) {
+		String fnName = expression.getName();
+		if(specialFunctionsNames.contains(fnName)){
+			FunctionSExpression fnToRemove = null;
+			for (FunctionSExpression fn : dList) {
+				if(fn.getName().equals(fnName)){
+					fnToRemove = fn;
+					break;
+				}
+			}
+			dList.remove(fnToRemove);
+			specialFunctionsNames.remove(fnName);
+		}
 		dList.add(expression);
-		specialFunctionsNames.add(expression.getName());
+		specialFunctionsNames.add(fnName);
 	}
 
 	private SExpression evaluateConditional(SExpression exp, ArrayList<SExpression> aList) throws InvalidOperationException{
