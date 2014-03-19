@@ -54,6 +54,8 @@ public class ExpressionEvaluator {
 		if(leftValue.equals("COND"))
 			return evaluateConditional(exp, aList);
 		if(leftValue.equals("DEFUN")){
+			if(isInternal)
+				throw new InvalidOperationException("Cannot have Defun inside function body");
 			return addUserDefinedFunction(exp, aList);
 		}
 		SExpression result = null;
