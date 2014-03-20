@@ -48,12 +48,8 @@ public class Runner {
 							 //Print the result
 							 System.out.print("]] ");
 							 result.print();
-							 System.out.println("");
-							 System.out.println("Press q to quit.");
-							 System.out.println("Input>>");
 						 } catch (InvalidOperationException e) {
 							 System.out.println(e.getMessage());
-							 return;
 						 }
 					 } catch (InvalidInputException e) {
 						 System.out.println(e.getMessage());
@@ -65,6 +61,9 @@ public class Runner {
 					System.out.println(e.getMessage());
 					return;
 				}
+				System.out.println("");
+				System.out.println("Press q to quit.");
+				System.out.println("Input>>");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

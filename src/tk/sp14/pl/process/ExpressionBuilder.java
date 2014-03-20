@@ -185,6 +185,6 @@ public class ExpressionBuilder {
 			return buildSingleExpressionFrom(tokens.subList(1, tokensSize), true);
 		}
 		else 
-			throw new InvalidInputException(currentToken + " - Error - Wrong placement of symbols");
+			throw new InvalidInputException(currentToken + " - Error - Illegal atom");
 	}
 }

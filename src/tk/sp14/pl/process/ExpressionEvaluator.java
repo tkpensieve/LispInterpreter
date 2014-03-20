@@ -50,7 +50,7 @@ public class ExpressionEvaluator {
 			}
 		}
 		if(leftValue.equals("QUOTE"))
-			return right;
+			return primitiveUtilities.CAR(right);
 		if(leftValue.equals("COND"))
 			return evaluateConditional(exp, aList);
 		if(leftValue.equals("DEFUN")){
@@ -142,6 +142,8 @@ public class ExpressionEvaluator {
 			return new Atom(functionName, AtomType.IDENTIFIERS);
 		} catch (InvalidOperationException e) {
 			throw new InvalidOperationException("Error in DEFUN syntax: " + e.getMessage());
+		}catch (Exception e) {
+			throw new InvalidOperationException("Error in DEFUN syntax");
 		}
 	}
 
