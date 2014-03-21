@@ -111,7 +111,7 @@ public class ExpressionEvaluator {
 					}
 					SExpression body = fn.getBody();
 					SExpression toBeExecuted = primitiveUtilities.CAR(body);
-					result = evaluate(toBeExecuted, true, aList);
+					result = evaluateOnNeedAndExtract(toBeExecuted, aList, false);
 					aList.subList(aList.size() - expectedParameterCount, aList.size()).clear();
 					break;
 				}
@@ -193,6 +193,8 @@ public class ExpressionEvaluator {
 
 	private ArrayList<SExpression> getParams(SExpression expression, ArrayList<SExpression> aList, boolean isFunctionDeclaration) throws InvalidOperationException {
 		ArrayList<SExpression> params = new ArrayList<>();
+		if(primitiveUtilities.ATOM(expression).equals(Primitives.T) && expression.equals(Primitives.NIL))
+			return params;
 		SExpression cdr = primitiveUtilities.CDR(expression);
 		SExpression car = primitiveUtilities.CAR(expression);
 		if(cdr.equals(Primitives.NIL)){
