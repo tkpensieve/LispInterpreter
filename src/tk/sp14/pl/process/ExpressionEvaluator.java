@@ -48,7 +48,7 @@ public class ExpressionEvaluator {
 			if(!primitiveMethodsParameterCount.keySet().contains(leftValue) && !specialFunctionsNames.contains(leftValue)){
 				left.print();
 				System.out.println(" not a function.");
-				throw new InvalidOperationException("Must be a function call");
+				throw new InvalidOperationException("Error: Must be a function call");
 			}
 		}
 		if(leftValue.equals("QUOTE"))
@@ -57,7 +57,7 @@ public class ExpressionEvaluator {
 			return evaluateConditional(exp, aList);
 		if(leftValue.equals("DEFUN")){
 			if(isInternal)
-				throw new InvalidOperationException("Cannot have Defun inside function body");
+				throw new InvalidOperationException("Error: Cannot have Defun inside function body");
 			return addUserDefinedFunction(exp, aList);
 		}
 		SExpression result = null;
@@ -66,7 +66,7 @@ public class ExpressionEvaluator {
 			int expectedParameterCount = primitiveMethodsParameterCount.get(leftValue);
 			//verify params count
 			if(params.size() != expectedParameterCount)
-				throw new InvalidOperationException("Wrong number of arguments passed");
+				throw new InvalidOperationException("Error: Wrong number of arguments passed");
 			//call appropriate function
 			if(leftValue.equals("CAR"))
 				result = primitiveUtilities.CAR(params.get(0));
@@ -105,7 +105,7 @@ public class ExpressionEvaluator {
 					int expectedParameterCount = parameterNames.size();
 					//verify params count
 					if(params.size() != expectedParameterCount)
-						throw new InvalidOperationException("Wrong number of arguments passed");
+						throw new InvalidOperationException("Error: Wrong number of arguments passed");
 					int i = 0;
 					for (String p : parameterNames) {
 						aList.add(new ComplexSExpression(new Atom(p, AtomType.IDENTIFIERS), params.get(i)));
@@ -183,13 +183,13 @@ public class ExpressionEvaluator {
 			}
 			SExpression booleanResult = evaluateOnNeedAndExtract(primitiveUtilities.CAR(conditionExpressionPair), aList, false);
 			if (!(booleanResult instanceof Atom) || !((Atom)booleanResult).getType().equals(AtomType.TERMINATORS))	
-				throw new InvalidOperationException("Condition must evaluate to T or NIL");
+				throw new InvalidOperationException("Error: Condition must evaluate to T or NIL");
 			if(booleanResult.equals(Primitives.T)){
 				return evaluateOnNeedAndExtract(primitiveUtilities.CDR(conditionExpressionPair),aList, false);
 			}
 			allParams = primitiveUtilities.CDR(allParams);
 		}
-		throw new InvalidOperationException("No conditions matched");
+		throw new InvalidOperationException("Error: No conditions matched");
 	}
 
 	private SExpression validationAndExtractBooleanParam(SExpression params) throws InvalidOperationException {
@@ -220,7 +220,7 @@ public class ExpressionEvaluator {
 			if(a.getType().equals(AtomType.IDENTIFIERS)){
 				SExpression match = getValueFromAList(a, aList, isFunctionDeclaration);
 				if(!isFunctionDeclaration && match.equals(Primitives.NIL))
-					throw new InvalidOperationException("Undeclared symbol is used");
+					throw new InvalidOperationException("Error: Undeclared symbol is used");
 				return primitiveUtilities.CDR(match);
 			}
 			return a;
