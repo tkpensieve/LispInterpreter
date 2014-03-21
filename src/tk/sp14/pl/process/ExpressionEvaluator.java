@@ -5,6 +5,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import tk.sp14.pl.domain.Atom;
 import tk.sp14.pl.domain.AtomType;
@@ -126,9 +128,15 @@ public class ExpressionEvaluator {
 			String functionName = ((Atom)primitiveUtilities.CAR(allParams)).getValue();
 			allParams = primitiveUtilities.CDR(allParams);
 			ArrayList<String> parameterNames = new ArrayList<>();
+			Set<String> set = new HashSet<String>();
 			for(SExpression s: getParams(primitiveUtilities.CAR(allParams), aList, true)){
 				Atom a = (Atom)s;
 				parameterNames.add(a.getValue());
+				set.add(a.getValue());
+			}
+			//duplicate parameter names
+			if(set.size() < parameterNames.size()){
+			    throw new InvalidOperationException("Duplicate parameter name used");
 			}
 			SExpression body = primitiveUtilities.CDR(allParams);
 			//handle syntax error
